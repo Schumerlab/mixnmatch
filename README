@@ -1,0 +1,68 @@
+This is a pipeline for simulating admixed genomes to evaluate the accuracy of local ancestry callers under different scenarios
+
+Depends on:
+fastahack - https://github.com/ekg/fastahack
+seqtk - https://github.com/lh3/seqtk
+wgsim - https://github.com/lh3/wgsim
+perl Math::Random module - try cpan Math::Random to install
+
+The first three programs need to be in your PATH
+
+Takes two co-linear genome assemblies as input, simulates data according parameters and produces reads for input into AncestryHMM or otehr programs. See here for generating them if you don't have any available: https://github.com/YourePrettyGood/PseudoreferencePipeline
+
+##############################
+####To run
+#############################
+
+perl simulate_admixed_genomes.pl my_cfg.cfg
+
+##############################
+######Configuration file
+##############################
+
+#see included example also: hybrid_simulation_configuration.cfg
+
+#name of parent1 genome
+genome1=
+
+#name of parent2 genome
+genome2=
+
+#proportion genome from parent species 1
+mixture_prop_par1=
+
+#expected recombination rate in Morgans per kb
+rec_rate_Morgans_kb=
+
+#number of individuals to simulate
+num_indivs=
+
+#generations since initial admixture
+gens_since_admixture=
+
+#chromosome to simulate, name must match exactly what is in the fasta file
+chr_to_simulate=
+
+#rate of polymorphism per bp in parent species 1
+poly_perbp_par1=
+
+#rate of polymorphism per bp in parent species 2
+poly_perbp_par2=
+
+#proportion of AIMs that are really shared polymorphisms (to simulate errors from this source)
+rate_shared_poly_at_aims=
+
+#read type, SE or PE
+read_type=
+
+#read length
+read_length=
+
+#per bp indel rate to simulate
+per_bp_indels=
+
+#sequencing error rate to simulate
+sequencing_error=
+
+#number of reads to simulate
+number_reads=
