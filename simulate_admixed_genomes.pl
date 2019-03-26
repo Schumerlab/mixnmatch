@@ -3,7 +3,7 @@
 my $infile=shift(@ARGV); chomp $infile;
 open IN, $infile or die "cannot open configuration file\n";
 
-my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $gens_drift_parental=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr="";
+my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $gens_drift_parental=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr=""; my $freq_diff="";
 
 while(my $line = <IN>){
 
@@ -70,6 +70,9 @@ while(my $line = <IN>){
     if($line =~ /sequencing_error=/g){
 	$sequence_error=$elements[1]; chomp $sequence_error;
     }#error rate
+    if($line =~ /aim_freq_cutoff=/g){
+	$freq_diff=$elements[1]; chomp $freq_diff;
+    }#aim frequency difference imposed in parents
 
 }#for all lines in the infile
 
@@ -77,7 +80,6 @@ my $counter=0; my $track=0;
 my $snp_freqs="shared_polymorphism_distribution";
 my $start=1;
 my $stop=1;
-my $freq_diff=0.99;
 my $error=1-$freq_diff;
 
 #catalog AIMs, extract focal chromosome
@@ -91,13 +93,25 @@ my $chr_length=qx(cat $chr1 | tail -n +2 | perl -p -e 's/\n//g' | wc -c | perl -
 print "number of basepairs in $chr is $chr_length\n";
 
 my $aims="simulation_ancestry_informative_sites_"."$genome1"."_"."$genome2"."_"."$chr";
-system("perl identify_AIMs_two_genomes.pl $chr1 $chr2 > $aims");
+system("perl identify_AIMs_sims.pl $chr1 $chr2 > $aims");
 
 #generate frequency file based on rate of shared polymorphism                                                                                     
-print "Rscript poly_dist.R $rate_shared_poly $poly_par1 $poly_par2 $chr_length $num_indivs $aims $error\n";
+#print "Rscript poly_dist.R $rate_shared_poly $poly_par1 $poly_par2 $chr_length $num_indivs $aims $error\n";
 system("Rscript poly_dist.R $rate_shared_poly $poly_par1 $poly_par2 $chr_length $num_indivs $aims $error");
 
+#remove previous fastahack index files
+if(-e '*.fai'){
+    system("rm *.fai");
+}#remove
+
 open LIST, ">simulated_hybrids_readlist_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
+my $reads_folder="simulated_hybrids_reads_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
+
+if(-e $reads_folder){
+    print "WARNING: removing previous results in $reads_folder\n";
+}#remove previous results
+system("mkdir $reads_folder");
+
 while($counter<=$num_indivs){
     $counter=$counter+1; $track=$track+1;
     
@@ -107,8 +121,8 @@ while($counter<=$num_indivs){
     #print "perl generate_shared_private_poly.pl $counter $aims $snp_freqs 0.001 0.0002 $chr_length $chr $chr1 $chr2\n";
     system("perl generate_shared_private_poly.pl $counter $aims $snp_freqs 0.001 0.0002 $chr_length $chr $chr1 $chr2");
 
-    $chr1="indiv"."$counter"."_hap1.fa";
-    $chr2="indiv"."$counter"."_hap2.fa";
+    my $chr1_mix="indiv"."$counter"."_hap1.fa";
+    my $chr2_mix="indiv"."$counter"."_hap2.fa";
 
     #generate and stitch together tracts
     my $chr1_tracts=qx(Rscript tract_lengths.R $mixture_proportion $gens_since_admix $rec_rate_Morgans $chr_length);
@@ -121,14 +135,22 @@ while($counter<=$num_indivs){
     open BED1, ">$bed1";
     open BED2, ">$bed2";
 
+    my $seq1=""; my $seq2=""; my $par1=""; my $par2="";
+
     my $start_bed=1; my $stop_bed=1;
     for my $m (0..scalar(@chrtracts1)-1){
 	if ($m % 2 == 0){
-	   $stop_bed=$chrtracts1[$m]+$start_bed-1;
-	    print BED1 "$chr\t$start_bed\t$stop_bed\tpar1\n";
+	   $stop_bed=$chrtracts1[$m]+$start_bed;
+	   print BED1 "$chr\t$start_bed\t$stop_bed\tpar1\n";
+	   $par1 = qx(fastahack $chr1_mix -r $chr:$start_bed..$stop_bed); chomp $par1;
+	   #print "fastahack $chr1_mix -r $chr:$start_bed..$stop_bed\n";
+	   $seq1="$seq1"."$par1";
 	} else{
-	   $stop_bed=$chrtracts1[$m]+$start_bed-1;
-	    print BED1 "$chr\t$start_bed\t$stop_bed\tpar2\n";
+	   $stop_bed=$chrtracts1[$m]+$start_bed;
+	   print BED1 "$chr\t$start_bed\t$stop_bed\tpar2\n";
+	   $par2 = qx(fastahack $chr2_mix -r $chr:$start_bed..$stop_bed); chomp $par2;
+	   #print "fastahack $chr2_mix -r $chr:$start_bed..$stop_bed\n"; 
+	   $seq1="$seq1"."$par2";
       	}#check odd or even for ancestry purposes
 	$start_bed=$stop_bed+1;
     }#for all tracts for haplotype 1
@@ -136,74 +158,45 @@ while($counter<=$num_indivs){
     my $start_bed=1; my $stop_bed=1;
     for my $n (0..scalar(@chrtracts2)-1){
         if ($n % 2 == 0){
-	    $stop_bed=$chrtracts2[$n]+$start_bed-1;
+	    $stop_bed=$chrtracts2[$n]+$start_bed;
             print BED2 "$chr\t$start_bed\t$stop_bed\tpar1\n";
+	    $par1 = qx(fastahack $chr1_mix -r $chr:$start_bed..$stop_bed); chomp $par1;
+	    #print "fastahack $chr1_mix -r $chr:$start_bed..$stop_bed\n";
+	    $seq2="$seq2"."$par1";
         } else{
-	    $stop_bed=$chrtracts2[$n]+$start_bed-1;
+	    $stop_bed=$chrtracts2[$n]+$start_bed;
             print BED2 "$chr\t$start_bed\t$stop_bed\tpar2\n";
+	    $par2 = qx(fastahack $chr2_mix -r $chr:$start_bed..$stop_bed); chomp $par2;
+	    #print "fastahack $chr2_mix -r $chr:$start_bed..$stop_bed\n";
+	    $seq2="$seq2"."$par2";
         }#check odd or even for ancestry purposes                                                                                
         $start_bed=$stop_bed+1;
     }#for all tracts for haplotype 2   
 
-    my $seq1=""; my $seq2=""; my $total_length_chr1=0; my $total_length_chr2=0;
+    my $combined_bed="indiv"."$counter"."_tracts.bed";
+    system("bedtools intersect -a $bed1 -b $bed2 -wo > $combined_bed");
+    system("rm $bed1 $bed2");
+
     open OUT, ">"."indiv"."$counter".".fa";
-    for my $j (0..scalar(@chrtracts1)-1){
-	my $current_tract=$chrtracts1[$j];
-
-       	if($j eq 0){$start=1;}
-
-	$stop=$current_tract+$total_length_chr1;
-
-	if (($j % 2 == 0) && ($current_tract != 0)) {
-	    my $par2 = qx(fastahack $chr2 -r $chr:$start..$stop); chomp $par2; 
-	    $seq1="$seq1"."$par2";
-	} elsif($current_tract != 0){
-	    my $par1 = qx(fastahack $chr1 -r $chr:$start..$stop); chomp $par1;
-	    $seq1="$seq1"."$par1";
-	}#odd or even?
-
-	$start=$start+$current_tract;
-        $total_length_chr1=$total_length_chr1+$current_tract;
-
-   }#generate chromosome 1 sequence
-
     print OUT ">indiv"."$j"."_hap1\n"."$seq1\n";
-
-    for my $j (0..scalar(@chrtracts2)-1){
-        my $current_tract=$chrtracts2[$j];
-
-        if($j eq 0){$start=1;}
-
-	$stop=$current_tract+$total_length_chr2;
-	#print "$start\t$stop\n";
-	if (($j % 2 == 0) && ($current_tract != 0)) {
-            my $par2 = qx(fastahack $chr2 -r $chr:$start..$stop); chomp $par2;
-            $seq2="$seq2"."$par2";
-        } elsif($current_tract != 0){
-            my $par1 = qx(fastahack $chr1 -r $chr:$start..$stop); chomp $par1;
-            $seq2="$seq2"."$par1";
-        }#odd or even?                                                                                                                                    
-	$start=$start+$current_tract;
-        $total_length_chr2=$total_length_chr2+$current_tract;
-
-    }#generate chromosome 2 sequence 
-
-    print OUT ">indiv"."$j"."_hap2\n"."$seq2\n";
+    print OUT ">indiv"."$q"."_hap2\n"."$seq2\n";
 
     #generate indels
     #generate reads
 
 	my $name="indiv"."$counter".".fa";
-	my $r1="indiv"."$counter"."_read1.fq"; my $r2="indiv"."$counter"."_read2.fq";
+	my $r1="$reads_folder"."/"."indiv"."$counter"."_read1.fq"; my $r2="$reads_folder"."/"."indiv"."$counter"."_read2.fq";
        
 	system("wgsim -N $number_reads -1 $read_length -2 $read_length -S $counter -e $sequence_error -r $per_bp_indel -R 1 $name $r1 $r2");
 
-    print LIST "$r1\t$r2\n";
+    print LIST "$r1".".gz"."\t$r2".".gz"."\n";
+    
+    system("gzip $r1 $r2");
+    system("mv $combined_bed $reads_folder");
+    system("mv $name $reads_folder");
 
     #cleanup
     my $cleanup="indiv"."$counter"."_hap"."*";
     system("rm $cleanup");
 
 }#for all jobs
-
-

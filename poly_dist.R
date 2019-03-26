@@ -41,7 +41,8 @@ shared<-rbinom(1,1,shared_poly)
 if(shared == 1){
 freq<-rbind(freq,cbind(0.5,0.5))
 } else{
-freq<-rbind(freq,cbind(1-error,error))
+curr_error<-runif(1,0,error)
+freq<-rbind(freq,cbind(1-curr_error,curr_error))
 }#site is shared or not
 
 }#all sites

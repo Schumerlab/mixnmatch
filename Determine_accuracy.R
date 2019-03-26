@@ -10,20 +10,21 @@ infile<-as.character(arrArgs[3])
 
 bins<-read.csv(file=binsfile,sep="\t",head=FALSE)
 
+bins<-bins[order(bins$V6),]
+#head(bins)
+
 command0=paste("head -n 1 ",infile," > accuracy_",indiv,"_","genotypes_file",sep="")
 
 system(command0)
 
-command1=paste("grep -w ",indiv," ",infile," ",">> accuracy_",indiv,"_","genotypes_file",sep="")
-
+command1=paste("grep ",indiv,"_ ",infile," ",">> accuracy_",indiv,"_","genotypes_file",sep="")
+#command1
 system(command1)
 
 command2=paste("perl transpose_genotypes_tsv.pl ","accuracy_",indiv,"_","genotypes_file",sep="")
-
-data<-read.csv(file=paste("accuracy_",indiv,"_","genotypes_file_transposed",sep=""),sep="\t",head=TRUE)
-#data$pos
-
 system(command2)
+#command2
+data<-read.csv(file=paste("accuracy_",indiv,"_","genotypes_file_transposed",sep=""),sep="\t",head=TRUE)
 
 options(scipen=999)
 whole_genome<-{}
@@ -54,16 +55,16 @@ accurate_counts=accurate_counts+counts_par2
 inaccurate_counts=inaccurate_counts+counts_het+counts_par1
 }
 
-whole_genome<-rbind(whole_genome,cbind(start,stop,counts_het,counts_par1,counts_par2,paste(bins$V4[x],bins$V8[x],sep=""),accurate_counts,inaccurate_counts))
+whole_genome<-rbind(whole_genome,cbind(indiv,start,stop,counts_het,counts_par1,counts_par2,paste(bins$V4[x],bins$V8[x],sep=""),accurate_counts,inaccurate_counts))
 
 counts_het=0
 counts_par1=0
 counts_par2=0
 
-start=stop
+start=stop+1
 stop=start+bins$V9[x+1]
 accurate_counts=0
 inaccurate_counts=0
 }
 
-whole_genome
+write.table(whole_genome,row.names=FALSE,col.names=FALSE,quote=FALSE,sep="\t")

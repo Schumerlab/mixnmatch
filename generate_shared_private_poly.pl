@@ -39,7 +39,7 @@ while((my $line1=<AIMS>) && (my $line2=<FREQS>)){
     my $par2_freq=$freqs[1]; chomp $par2_freq;
     #print "$par1_freq\t$par2_freq\n";
 
-    my $focal_freq1=random_binomial(1,1,$par1_freq);
+    my $focal_freq1=random_binomial(1,1,1-$par1_freq);
 
     if($focal_freq1 eq 1){
 	print INSNP1 "$chrom\t$bp\t$species1\t$species2\n";

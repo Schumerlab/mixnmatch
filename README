@@ -4,9 +4,13 @@ Depends on:
 fastahack - https://github.com/ekg/fastahack
 seqtk - https://github.com/lh3/seqtk
 wgsim - https://github.com/lh3/wgsim
+bedtools2 - https://github.com/arq5x/bedtools2.git
 perl Math::Random module - try cpan Math::Random to install
 
-The first three programs need to be in your PATH
+The first four programs need to be in your PATH. To test that they are type each program name and hit enter. If it returns usage they are installed properly. e.g.:
+
+fastahack
+
 
 Takes two co-linear genome assemblies as input, simulates data according parameters and produces reads for input into AncestryHMM or otehr programs. See here for generating them if you don't have any available: https://github.com/YourePrettyGood/PseudoreferencePipeline
 
