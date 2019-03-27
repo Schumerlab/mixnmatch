@@ -70,3 +70,19 @@ sequencing_error=
 
 #number of reads to simulate
 number_reads=
+
+#######################
+####EVALUATING ACCURACY
+#######################
+
+After your simulation, run Ancestry_HMM_pipeline as you would on any data (see: https://github.com/Schumerlab/Ancestry_HMM_pipeline)
+
+Note that during the simulation an input reads file list is automatically generated. The name will be: 
+
+simulated_hybrids_readlist_genX_prop_par1_Y
+
+where X and Y are the parameters simulated.
+
+Once the Ancestry_HMM_pipeline has finished you can run the following to determine accuracy:
+
+perl post_hmm_accuracy_shell.pl ancestry-probs-par1_file ancestry-probs_par2_file path_to_simulation_reads_folder
