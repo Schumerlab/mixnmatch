@@ -3,7 +3,7 @@
 my $infile=shift(@ARGV); chomp $infile;
 open IN, $infile or die "cannot open configuration file\n";
 
-my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $gens_drift_parental=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr=""; my $freq_diff="";
+my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $gens_drift_parental=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr=""; my $freq_diff=""; my $job_submit_cmd=""; my $job_params=""; my $num_indiv_per_job=""; my @commands_array=();
 
 while(my $line = <IN>){
 
@@ -64,6 +64,18 @@ while(my $line = <IN>){
     if($line =~ /read_length=/g){
 	$read_length=$elements[1]; chomp $read_length;
     }#define read length
+    if($line =~ /job_submit_cmd=/g){
+	$job_submit_cmd=$elements[1]; chomp $job_submit_cmd;
+	print "job submit command is $job_submit_cmd\n";
+    }#job submission command
+    if($line =~ /job_header=/g){
+	@commands_array=split(/#/,$line);
+     	#print "job submission parameters are $job_params\n";
+    }#job header
+    if($line =~ /num_indiv_per_job=/g){
+	$num_indiv_per_job=$elements[1]; chomp $num_indiv_per_job;
+	print "splitting into $num_indiv_per_job individuals per job\n";
+    }#num indiv per job 
     if($line =~ /gens_drift_parental=/g){
 	$gens_drift_parental=$elements[1]; chomp $gens_drift_parental;
     }#generations drift
@@ -76,7 +88,7 @@ while(my $line = <IN>){
 
 }#for all lines in the infile
 
-my $counter=0; my $track=0;
+
 my $snp_freqs="shared_polymorphism_distribution";
 my $start=1;
 my $stop=1;
@@ -109,94 +121,43 @@ my $reads_folder="simulated_hybrids_reads_"."gen"."$gens_since_admix"."_prop_par
 
 if(-e $reads_folder){
     print "WARNING: removing previous results in $reads_folder\n";
+    system("rm -r $reads_folder");
 }#remove previous results
 system("mkdir $reads_folder");
 
-while($counter<=$num_indivs){
+#define files and counters
+my $current_outfile="split_file_list_1"; my $current_slurm="slurm_batch1.sh"; my $counter=0; my $track=0;
+
+while($counter<$num_indivs){
     $counter=$counter+1; $track=$track+1;
+    #print "$counter\t$track\n";
     
-    my $chr1="$chr"."_select_par1.fa";
-    my $chr2="$chr"."_select_par2.fa";
+    if(($track>=$num_indiv_per_job) or ($counter eq $num_indivs) or ($counter eq 1)){
 
-    #print "perl generate_shared_private_poly.pl $counter $aims $snp_freqs 0.001 0.0002 $chr_length $chr $chr1 $chr2\n";
-    system("perl generate_shared_private_poly.pl $counter $aims $snp_freqs 0.001 0.0002 $chr_length $chr $chr1 $chr2");
+	if($track eq $num_indiv_per_job){
+	
+	    #print commands for current job
+	    print SLURM "perl generate_genomes_and_reads.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel\n";
+	    
+	    #submit current job
+	    system("$job_submit_cmd $current_slurm");
+	}#submit job
+	$current_outfile="split_file_list_"."$counter";
+	$current_slurm="slurm_batch"."$counter".".sh"; 
+	open OUT, ">$current_outfile";
+	open SLURM, ">$current_slurm";
+	for my $b (1..scalar(@commands_array)-1){
+	print SLURM "#"."$commands_array[$b]"."\n";
+	}#print out all slurm header elements
+	$track=0;
+	}#open individual files
 
-    my $chr1_mix="indiv"."$counter"."_hap1.fa";
-    my $chr2_mix="indiv"."$counter"."_hap2.fa";
+    #print to individuals file for the shell
+     print "submitting individual $counter\n";
+     print OUT "$counter\n";
 
-    #generate and stitch together tracts
-    my $chr1_tracts=qx(Rscript tract_lengths.R $mixture_proportion $gens_since_admix $rec_rate_Morgans $chr_length);
-    #print "Rscript tract_lengths.R $mixture_proportion $gens_since_admix $rec_rate_Morgans $chr_length\n";
-    my @chrtracts1=split(/\n/,$chr1_tracts);
-    my $chr2_tracts=qx(Rscript tract_lengths.R $mixture_proportion $gens_since_admix $rec_rate_Morgans $chr_length);
-    my @chrtracts2=split(/\n/,$chr2_tracts);
-
-    my $bed1="indiv"."$counter"."_tracts_hap1.bed"; my $bed2="indiv"."$counter"."_tracts_hap2.bed";
-    open BED1, ">$bed1";
-    open BED2, ">$bed2";
-
-    my $seq1=""; my $seq2=""; my $par1=""; my $par2="";
-
-    my $start_bed=1; my $stop_bed=1;
-    for my $m (0..scalar(@chrtracts1)-1){
-	if ($m % 2 == 0){
-	   $stop_bed=$chrtracts1[$m]+$start_bed;
-	   print BED1 "$chr\t$start_bed\t$stop_bed\tpar1\n";
-	   $par1 = qx(fastahack $chr1_mix -r $chr:$start_bed..$stop_bed); chomp $par1;
-	   #print "fastahack $chr1_mix -r $chr:$start_bed..$stop_bed\n";
-	   $seq1="$seq1"."$par1";
-	} else{
-	   $stop_bed=$chrtracts1[$m]+$start_bed;
-	   print BED1 "$chr\t$start_bed\t$stop_bed\tpar2\n";
-	   $par2 = qx(fastahack $chr2_mix -r $chr:$start_bed..$stop_bed); chomp $par2;
-	   #print "fastahack $chr2_mix -r $chr:$start_bed..$stop_bed\n"; 
-	   $seq1="$seq1"."$par2";
-      	}#check odd or even for ancestry purposes
-	$start_bed=$stop_bed+1;
-    }#for all tracts for haplotype 1
-
-    my $start_bed=1; my $stop_bed=1;
-    for my $n (0..scalar(@chrtracts2)-1){
-        if ($n % 2 == 0){
-	    $stop_bed=$chrtracts2[$n]+$start_bed;
-            print BED2 "$chr\t$start_bed\t$stop_bed\tpar1\n";
-	    $par1 = qx(fastahack $chr1_mix -r $chr:$start_bed..$stop_bed); chomp $par1;
-	    #print "fastahack $chr1_mix -r $chr:$start_bed..$stop_bed\n";
-	    $seq2="$seq2"."$par1";
-        } else{
-	    $stop_bed=$chrtracts2[$n]+$start_bed;
-            print BED2 "$chr\t$start_bed\t$stop_bed\tpar2\n";
-	    $par2 = qx(fastahack $chr2_mix -r $chr:$start_bed..$stop_bed); chomp $par2;
-	    #print "fastahack $chr2_mix -r $chr:$start_bed..$stop_bed\n";
-	    $seq2="$seq2"."$par2";
-        }#check odd or even for ancestry purposes                                                                                
-        $start_bed=$stop_bed+1;
-    }#for all tracts for haplotype 2   
-
-    my $combined_bed="indiv"."$counter"."_tracts.bed";
-    system("bedtools intersect -a $bed1 -b $bed2 -wo > $combined_bed");
-    system("rm $bed1 $bed2");
-
-    open OUT, ">"."indiv"."$counter".".fa";
-    print OUT ">indiv"."$j"."_hap1\n"."$seq1\n";
-    print OUT ">indiv"."$q"."_hap2\n"."$seq2\n";
-
-    #generate indels
-    #generate reads
-
-	my $name="indiv"."$counter".".fa";
 	my $r1="$reads_folder"."/"."indiv"."$counter"."_read1.fq"; my $r2="$reads_folder"."/"."indiv"."$counter"."_read2.fq";
-       
-	system("wgsim -N $number_reads -1 $read_length -2 $read_length -S $counter -e $sequence_error -r $per_bp_indel -R 1 $name $r1 $r2");
-
+ 
     print LIST "$r1".".gz"."\t$r2".".gz"."\n";
-    
-    system("gzip $r1 $r2");
-    system("mv $combined_bed $reads_folder");
-    system("mv $name $reads_folder");
-
-    #cleanup
-    my $cleanup="indiv"."$counter"."_hap"."*";
-    system("rm $cleanup");
-
+ 
 }#for all jobs
