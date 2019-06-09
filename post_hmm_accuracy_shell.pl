@@ -18,10 +18,12 @@ open OUT, ">results_summary_"."$bed_list";
 for my $i (1..$num_indiv){
 
     my $indiv_name="indiv"."$i";
-    my $bed="$bed_list"."/"."$indiv_name"."_tracts.bed";
+    my $bed="$bed_list"."/"."$indiv_name".".bed";
 
     #print "Rscript Determine_accuracy.R $bed $indiv_name $genos\n";
     my $current=qx(Rscript Determine_accuracy.R $bed $indiv_name $genos); chomp $current;
     print OUT "$current\n";
 
 }#for all individuals
+
+system("rm accuracy_indiv*");

@@ -48,3 +48,7 @@ freq<-rbind(freq,cbind(1-curr_error,curr_error))
 }#all sites
 
 write.table(freq,file="shared_polymorphism_distribution",sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
+
+write.table(cbind(as.character(aims_dat[,1]),aims_dat[,2],aims_dat[,3],round(as.numeric(freq[,1])*50),round(as.numeric(freq[,2])*50),round(as.numeric(freq[,2])*50),round(as.numeric(freq[,1])*50),rep(0.000001,length(freq[,1]))),file="simulated_parental_counts_for_AncestryHMM",sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
+
+warnings()

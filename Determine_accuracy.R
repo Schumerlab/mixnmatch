@@ -10,6 +10,7 @@ infile<-as.character(arrArgs[3])
 
 bins<-read.csv(file=binsfile,sep="\t",head=FALSE)
 
+
 bins<-bins[order(bins$V6),]
 #head(bins)
 
