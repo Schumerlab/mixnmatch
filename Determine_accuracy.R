@@ -1,12 +1,13 @@
 arrArgs <- commandArgs(trailingOnly = TRUE);
 
-if(length(arrArgs)<3){
-stop("usage is: Rscript Determine_accuracy.R true_ancestry.bed individ genotypes_file\n") 
+if(length(arrArgs)<4){
+stop("usage is: Rscript Determine_accuracy.R true_ancestry.bed individ genotypes_file path\n") 
 }
 
 binsfile<-as.character(arrArgs[1])
 indiv<-as.character(arrArgs[2])
 infile<-as.character(arrArgs[3])
+path<-as.character(arrArgs[4])
 
 bins<-read.csv(file=binsfile,sep="\t",head=FALSE)
 
@@ -22,7 +23,7 @@ command1=paste("grep ",indiv,"_ ",infile," ",">> accuracy_",indiv,"_","genotypes
 #command1
 system(command1)
 
-command2=paste("perl transpose_genotypes_tsv.pl ","accuracy_",indiv,"_","genotypes_file",sep="")
+command2=paste("perl ",path,"/transpose_genotypes_tsv.pl ","accuracy_",indiv,"_","genotypes_file",sep="")
 system(command2)
 #command2
 data<-read.csv(file=paste("accuracy_",indiv,"_","genotypes_file_transposed",sep=""),sep="\t",head=TRUE)

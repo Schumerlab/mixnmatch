@@ -8,7 +8,7 @@
 # usage
 # perl parsetsv_to_genotypes_Dec2017_v2.pl par1.tsv par2.tsv outname
 
-if (@ARGV<1){
+if (@ARGV<3){
 	print "\nusage: perl  parsetsv_to_genotypes_Dec2017_v2.pl par1.tsv par2.tsv outfile_name\n\n"; exit;
 }
 

@@ -302,7 +302,7 @@ print "number of basepairs in $chr is $chr_length\n";
 
 #define genomes and AIMs
 my $aims="simulation_ancestry_informative_sites_"."$genome1"."_"."$genome2"."_"."$chr";
-system("perl identify_AIMs_sims.pl $chr1 $chr2 > $aims");
+system("perl $program_path/identify_AIMs_sims.pl $chr1 $chr2 > $aims");
 
 if($macs eq 0){
     system("perl $program_path/identify_AIMs_sims.pl $chr1 $chr2 > $aims");
@@ -384,12 +384,17 @@ for my $k (1..scalar(@commands_array)-1){
     print CLEANUP "#"."$commands_array[$k]"."\n";
 }#print out all slurm header elements
 
-print CLEANUP "perl prior_recombination_map_ancestryHMM.pl simulated_parental_counts_for_AncestryHMM $recombination_map $rec_rate_Morgans $chr_length\n";
 print CLEANUP "rm admix_simulation_demography_output_results_*"."\n";
 print CLEANUP "rm slurm_batch*"."\n";
 print CLEANUP "rm split_file_list_*"."\n";
 print CLEANUP "rm macs_simulation_results_trees*"."\n";
 print CLEANUP "rm par*_coordinates_fastahack"."\n";
+print CLEANUP "rm *fai"."\n";
+print CLEANUP "rm indiv*_log"."\n";
+
+if($use_map eq 1){
+    print CLEANUP "perl prior_recombination_map_ancestryHMM.pl simulated_parental_counts_for_AncestryHMM $recombination_map $rec_rate_Morgans $chr_length\n";
+}#correct map if needed
 
 #print "cleaning up after: $string\n";
 
