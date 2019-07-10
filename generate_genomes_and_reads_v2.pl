@@ -56,9 +56,9 @@ while(my $line=<IN>){
     my $hap2="indiv"."$counter"."_"."hap2.fa";
 
     #generate and stitch together tracts
-    system("perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $hap1 $hap2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map");
+    system("perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $hap1 $hap2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $program_path");
     
-    print "perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $hap1 $hap2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map\n";
+    print "perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $hap1 $hap2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $program_path\n";
 
     }#only generate polymorphic versions if not using macs
     elsif($use_macs eq 1){
@@ -69,9 +69,9 @@ while(my $line=<IN>){
 	system("$awk_select");
 
     #generate and stitch together tracts                                                                                                             
-    system("perl $program_path/selam_to_ancestry_tracts.pl $current_haps 1 $genome1 $genome2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map");
+    system("perl $program_path/selam_to_ancestry_tracts.pl $current_haps 1 $genome1 $genome2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $program_path");
     
-    print "perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $genome1 $genome2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map\n";
+    print "perl $program_path/selam_to_ancestry_tracts.pl $current_haps 0 $genome1 $genome2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map$program_path\n";
 
     }#otherwise use macs
  

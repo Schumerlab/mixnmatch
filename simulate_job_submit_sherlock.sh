@@ -9,5 +9,11 @@
 
 module load R
 module load perl
+module load biology py-biopython
+module load boost
+module load gsl
+export PATH="/home/groups/schumer/shared_bin/lib:$PATH"
+export PATH="/home/groups/schumer/shared_bin:$PATH"
+export LD_LIBRARY_PATH="/home/groups/schumer/shared_bin/lib:$LD_LIBRARY_PATH"
 
-perl simulate_admixed_genomes.pl hybrid_simulation_configuration.cfg
+perl /scratch/groups/schumer/molly/Simulate_Ancestry_HMM/Simulate_hybrid_genomes/simulate_admixed_genomes_v6.pl hybrid_simulation_configuration.cfg

@@ -18,7 +18,7 @@ To test that programs are in your PATH type each program name and hit enter. If 
 
 fastahack
 
-Option 1: Simulates genome sequences with macs and simulates parental and hybrid haplotypes based on provided parameters
+Option 1: Simulates genome sequences with macs and simulates parental and hybrid haplotypes based on provided parameters. An ancestral sequence can also be used with this option.
 
 Optuon 2: Takes two co-linear genome assemblies as input, simulates data according parameters and produces reads for input into AncestryHMM or otehr programs. See here for generating them if you don't have any available: https://github.com/YourePrettyGood/PseudoreferencePipeline
 
@@ -39,6 +39,9 @@ genome1=
 
 #name of parent2 genome
 genome2=
+
+#use a genome1 sequence as the ancestral sequence? Options are 0 - no and 1 - yes (only compatible with use_macs=1)
+use_ancestral=
 
 #proportion genome from parent species 1
 mixture_prop_par1=
@@ -79,6 +82,16 @@ sequencing_error=
 #number of reads to simulate
 number_reads=
 
+#Simulate drift between the populations that admixed and the sampled parental species populations? 1 - yes, 0 - no
+#NOTE: macs_par1_aims_pop and macs_par2_aims_pop must be defined with this option, and an appropriate macs command provided
+parental_drift=
+
+#If you are simulating drift, put which population to treat as the parent 1 reference population. NOTE: This value must be greater than 2 because populations 1 and 2 must be the admixing parental populations.
+macs_par1_aims_pop=
+
+#If you are simulating drift, put which population to treat as the parent 2 reference population. NOTE: This value must be greater than 2 because populations 1 and 2 must be the admixing parental populations.
+macs_par2_aims_pop=
+
 #Ancestry informative site frequency threshold to impose on parental species haplotypes (ratio 0-1, recommended >0.9)
 aim_freq_cutoff=
 
@@ -96,6 +109,8 @@ SELAM_param_file=
 
 #If you are simulating sequences using macs (use_macs=1), you must provide a macs command string. The program will accept two populations only but arbitrary demographic history. A macs formatted recombination file must be provided with the -R parameter if use_map=1
 #example: macs_params=60 20000000 -I 2 30 30 0 -t 0.001 -h 1e2 -r 0.001 -ej 2 2 1 -R recombination_map_for_macs.txt
+#NOTE: if you are using the ancestral sequence option the chromosome length *must* match the length of the input scaffold
+#NOTE: if you are using the parental drift option, you need to specify those populations and chromosomes to sample in the command line
 macs_params=
 
 #provide the full path to where the program scripts are located:
@@ -131,6 +146,10 @@ The input ancestry informative sites, parental counts, and parental genomes (onl
 simulated_parental_counts_for_AncestryHMM
 simulated_AIMs_for_AncestryHMM
 
+If you specified use_map=1 the program will also output the following file with local recombination rates indicated:
+
+simulated_parental_counts_for_AncestryHMM_recombination_prior.txt
+
 During the simulation an input reads file list will also be automatically generated. The name will be: 
 
 simulated_hybrids_readlist_genX_prop_par1_Y
@@ -146,4 +165,4 @@ macs_simulated_parent2.fa
 
 Once the Ancestry_HMM_pipeline has finished you can run the following to determine accuracy:
 
-perl post_hmm_accuracy_shell.pl ancestry-probs-par1_file ancestry-probs_par2_file path_to_simulation_reads_folder
+perl post_hmm_accuracy_shell.pl ancestry-probs-par1_file ancestry-probs_par2_file path_to_simulation_reads_folder path_to_simulator_install

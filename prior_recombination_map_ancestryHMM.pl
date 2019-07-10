@@ -1,7 +1,7 @@
 #perl! -w
 
 if(@ARGV<3){
-    print "perl prior_recombination_map_ancestryHMM.pl ancestry_hmm_file rec_map_macs rate_M_per_kb chrom_length\n";
+    print "perl prior_recombination_map_ancestryHMM.pl ancestry_hmm_file rec_map_macs rate_M_per_kb chrom_length program_path\n";
 }#print usage and exit
 
 my $infile=shift(@ARGV); chomp $infile;
@@ -12,6 +12,8 @@ my $map=shift(@ARGV); chomp $map;
 my $rate=shift(@ARGV); chomp $rate;
 
 my $chrom=shift(@ARGV); chomp $chrom;
+
+my $path=shift(@ARGV); chomp $path;
 
 open OUT, ">$infile"."_recombination_prior.txt";
 
@@ -25,7 +27,7 @@ while(my $line=<IN>){
 
     if($counter ne 1){
 	#print "Rscript bp_to_morgans_recmap.R $map $start_prev $stop $rate $chrom\n";
-    $local_rate=qx(Rscript bp_to_morgans_recmap.R $map $start_prev $stop $rate $chrom); chomp $local_rate;
+    $local_rate=qx(Rscript $path/bp_to_morgans_recmap.R $map $start_prev $stop $rate $chrom); chomp $local_rate;
     }
 
     print OUT "$elements[0]\t$elements[1]\t$elements[2]\t$elements[3]\t$elements[4]\t$elements[5]\t$local_rate\n";

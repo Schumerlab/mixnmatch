@@ -4,7 +4,7 @@ use Math::Round;
 use Math::Random;
 
 if(@ARGV<8){
-    print "perl selam_to_ancestry_tracts.pl selam_tracts use_macs_0_1 genome1 genome2 simulation_id num_macs_haps_par1 num_macs_haps_par2 use_map map_or_global_rate\n";
+    print "perl selam_to_ancestry_tracts.pl selam_tracts use_macs_0_1 genome1 genome2 simulation_id num_macs_haps_par1 num_macs_haps_par2 use_map map_or_global_rate program_path\n";
 }#print usage
 
 my $selam=shift(@ARGV); chomp $selam;
@@ -29,6 +29,8 @@ my $use_map=shift(@ARGV); chomp $use_map;
 my $map_or_rate=shift(@ARGV); chomp $map_or_rate;
 
 my $rec_map_file=shift(@ARGV); chomp $rec_map_file;
+
+my $program_path=shift(@ARGV); chomp $program_path;
 
 if($use_map eq 0){$map_or_rate=$map_or_rate;}
 
@@ -84,7 +86,7 @@ while(my $line2=<TRACTS>){
 	#print "$start_raw_prev\t$stop_raw_prev\t$stop_raw\n";
 
 	if(($flag eq 0) && ($stop_raw != 0) && ($stop < $chr_length)){
-	my $results=qx(Rscript morgans_to_bp_recmap.R $rec_map_file $start_raw $stop_raw $map_or_rate $chr_length $last_start $start_raw_prev); chomp $results;
+	my $results=qx(Rscript $program_path/morgans_to_bp_recmap.R $rec_map_file $start_raw $stop_raw $map_or_rate $chr_length $last_start $start_raw_prev); chomp $results;
         my @mapinfo=split(/\t/,$results);
 	#print "Rscript morgans_to_bp_recmap.R $rec_map_file $start_raw $stop_raw $map_or_rate $chr_length $last_start $start_raw_prev\n";
         $start=$mapinfo[0]; $stop=$mapinfo[1]; $flag=$mapinfo[2];

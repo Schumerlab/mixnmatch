@@ -16,8 +16,12 @@ my $par2=shift(@ARGV); chomp $par2;
 my $thresh=shift(@ARGV); chomp $thresh;
 
 my $par1num=qx(grep '>' $par1 | wc -l | perl -p -e 's/ +/\t/g' | cut -f 1); chomp $par1num;
+my $par1seqids=qx(grep '>' $par1 | perl -p -e 's/>//g'); chomp $par1seqids;
+my @par1seqs=split(/\n/,$par1seqids);
 
 my $par2num=qx(grep '>' $par2 | wc -l | perl -p -e 's/ +/\t/g' | cut -f 1); chomp $par2num;
+my $par2seqids=qx(grep '>' $par2 | perl -p -e 's/>//g'); chomp $par2seqids;
+my @par2seqs=split(/\n/,$par2seqids);
 
 my $total=$par1num + $par2num;
 
@@ -38,14 +42,14 @@ while(my $line=<IN>){
     open OUT1, ">par1_coordinates_fastahack";
     open OUT2, ">par2_coordinates_fastahack";
 
-    for my $i (0..$par1num){
-
-	print OUT1 "$i:$coord\n";
+    for my $i (0..scalar(@par1seqs)-1){
+	my $currseq=$par1seqs[$i];
+	print OUT1 "$currseq:$coord\n";
 	#print "$i:$line\n";
     }#go through all par1 sequences
-    for my $j ($par2num..($total-1)){
-
-	print OUT2 "$j:$coord\n";
+    for my $j (0..scalar(@par1seqs)-1){
+	my $currseq=$par2seqs[$j];
+	print OUT2 "$currseq:$coord\n";
 	#print "$j:$line\n";
     }#go through all par2 sequences
 
@@ -87,8 +91,11 @@ while(my $line=<IN>){
 	}#count a1
 
     }#count all bases
+
+	if(scalar(@par1bps) >0 & scalar(@par2bps) >0){
 	$par1freq=$par1count/scalar(@par1bps);
 	$par2freq=$par2count/scalar(@par2bps);
+	}#count first
 	#print "$par1freq\t$par2freq\n";
 
  }#only evaluate biallelic sites
