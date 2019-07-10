@@ -501,4 +501,4 @@ if($use_map eq 1){
 
 #print "cleaning up after: $string\n";
 
-#!system("sbatch --dependency=afterok:$string cleanup.sh");
+system("sbatch --dependency=afterok:$string cleanup.sh");
