@@ -3,7 +3,7 @@
 my $infile=shift(@ARGV); chomp $infile;
 open IN, $infile or die "cannot open configuration file\n";
 
-my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $parental_drift=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr=""; my $freq_diff=""; my $job_submit_cmd=""; my $job_params=""; my $num_indiv_per_job=""; my @commands_array=(); my $macs=0; my $selam_param=""; my $macs_params=""; my $seq_params=""; my $total_par1=0; my $total_par2=0; my $program_path=""; my $use_map=0; my $recombination_map=""; my $par1_aim=0; my $par2_aim=0; my $use_ancestral=0; my $par1_drift=0; my $par2_drift=0;
+my $genome1=""; my $genome2=""; my $mixture_proportion=""; my $rec_rate_Morgans=""; my $num_indivs=""; my $gens_since_admix=""; my $rate_shared_poly=""; my $per_bp_indel=""; my $number_reads=""; my $parental_drift=""; my $sequence_error=""; my $read_type=""; my $read_length=""; my $poly_par1=""; my $poly_par2=""; my $chr=""; my $freq_diff=""; my $job_submit_cmd=""; my $job_params=""; my $num_indiv_per_job=""; my @commands_array=(); my $macs=0; my $selam_param=""; my $macs_params=""; my $seq_params=""; my $total_par1=0; my $total_par2=0; my $program_path=""; my $use_map=0; my $recombination_map=""; my $par1_aim=0; my $par2_aim=0; my $use_ancestral=0; my $par1_drift=0; my $par2_drift=0; my $selam_s=""; my $cross_contam=0;
 
 while(my $line = <IN>){
 
@@ -68,6 +68,10 @@ while(my $line = <IN>){
     if($line =~ /read_length=/g){
 	$read_length=$elements[1]; chomp $read_length;
     }#define read length
+    if($line =~ /cross_contam=/g){
+	$cross_contam=$elements[1]; chomp $chross_contam;
+	print "simulating a cross-well contamination rate of $cross_contam\n";
+    }#define rate of cross sample contamination
     if($line =~ /job_submit_cmd=/g){
 	$job_submit_cmd=$elements[1]; chomp $job_submit_cmd;
 	print "job submit command is $job_submit_cmd\n";
@@ -109,6 +113,12 @@ while(my $line = <IN>){
 	    print "using $selam_param as input to SELAM\n";
 	}#print which file is being used
     }#selam param file provided?
+    if($line =~ /SELAM_selection_file/g){
+	$selam_s=$elements[1]; chomp $selam_s;
+	if(length($selam_s) > 0){
+	    print "using $selam_s as a selection file in SELAM\n";
+	}#print which file is being used
+    }#selam selection file provided?
     if($line =~ /macs_params=/g){
 	$macs_params=$elements[1]; chomp $macs_params;
     }#macs param file
@@ -418,9 +428,13 @@ if($macs eq 1){
 #run SELAM to generate ancestry tracts for later use
 my $length_morgans= ($rec_rate_Morgans)*($chr_length/1000);
 print "length of the chromosome in morgans is $length_morgans\n";
-system("SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0");
-
+if(length($selam_s) > 0){
+system("SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0 -s $selam_s");
+print "SELAM command is: SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0 -s $selam_s\n";
+}else{
+system("SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0");   
 print "SELAM command is: SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0\n";
+}#use selection file or not
 
 open LIST, ">simulated_hybrids_readlist_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
 my $reads_folder="simulated_hybrids_reads_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
@@ -448,10 +462,10 @@ while($counter<$num_indivs){
 	
 	    #print commands for current job
 	    if($macs eq 1){
-	    print SLURM "perl $program_path/generate_genomes_and_reads_v2.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $program_path\n";
+	    print SLURM "perl $program_path/generate_genomes_and_reads_v3.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $cross_contam $program_path\n";
 
 	    } elsif($macs eq 0){
-	    print SLURM "perl $program_path/generate_genomes_and_reads_v2.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs 1 1 $use_map $rec_rate_Morgans $recombination_map $program_path\n";
+	    print SLURM "perl $program_path/generate_genomes_and_reads_v3.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs 1 1 $use_map $rec_rate_Morgans $recombination_map $cross_contam $program_path\n";
 	    }#submit current job
 	    my $jobid=qx($job_submit_cmd $current_slurm); chomp $jobid;
 	    my @jobarray=split(/ /,$jobid);

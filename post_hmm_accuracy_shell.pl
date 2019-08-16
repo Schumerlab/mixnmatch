@@ -16,6 +16,7 @@ system("perl $path/parsetsv_to_genotypes_v2.pl $file1 $file2 $genos");
 
 my $num_indiv=qx(ls ./$bed_list/indiv*bed | wc -l | perl -p -e 's/ +/\t/g' | cut -f 1); chomp $num_indiv;
 
+my $outfile="results_summary_"."$bed_list"; 
 open OUT, ">results_summary_"."$bed_list";
 for my $i (1..$num_indiv){
 
@@ -29,3 +30,7 @@ for my $i (1..$num_indiv){
 }#for all individuals
 
 system("rm accuracy_indiv*");
+
+#run summary plots:
+
+system("Rscript $path/plot_mixnmatch_accuracy.R $outfile");
