@@ -69,7 +69,8 @@ while(my $line = <IN>){
 	$read_length=$elements[1]; chomp $read_length;
     }#define read length
     if($line =~ /cross_contam=/g){
-	$cross_contam=$elements[1]; chomp $chross_contam;
+	$cross_contam=$elements[1]; chomp $cross_contam;
+	if(length($cross_contam) < 1){$cross_contam=0;}
 	print "simulating a cross-well contamination rate of $cross_contam\n";
     }#define rate of cross sample contamination
     if($line =~ /job_submit_cmd=/g){

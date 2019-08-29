@@ -165,4 +165,4 @@ macs_simulated_parent2.fa
 
 Once the Ancestry_HMM_pipeline has finished you can run the following to determine accuracy:
 
-perl post_hmm_accuracy_shell.pl ancestry-probs-par1_file ancestry-probs_par2_file path_to_simulation_reads_folder path_to_simulator_install
+perl post_hmm_accuracy_shell.pl ancestry-probs-par1_file ancestry-probs_par2_file path_to_simulation_reads_folder posterior_thresh path_to_simulator_install
