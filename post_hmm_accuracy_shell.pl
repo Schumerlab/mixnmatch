@@ -26,7 +26,7 @@ for my $i (1..$num_indiv){
     my $bed="$bed_list"."/"."$indiv_name".".bed";
 
     #print "Rscript Determine_accuracy.R $bed $indiv_name $genos\n";
-    my $current=qx(Rscript $path/Determine_accuracy.R $bed $indiv_name $genos $path); chomp $current;
+    my $current=qx(Rscript $path/Determine_accuracy.R $bed $indiv_name $genos $file1 $file2 $path); chomp $current;
     print OUT "$current\n";
 
 }#for all individuals
@@ -36,3 +36,4 @@ system("rm accuracy_indiv*");
 #run summary plots:
 
 system("Rscript $path/plot_mixnmatch_accuracy.R $outfile");
+OA

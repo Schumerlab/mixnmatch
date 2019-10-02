@@ -437,6 +437,9 @@ system("SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt 
 print "SELAM command is: SELAM -d selam_demography.txt -o selam_simulation_output_parameters.txt -c 2 $length_morgans 0\n";
 }#use selection file or not
 
+#modify file:
+system("perl -pi -e 's/\#\t/\#/g' admix_simulation_demography_output_results.txt");
+
 open LIST, ">simulated_hybrids_readlist_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
 my $reads_folder="simulated_hybrids_reads_"."gen"."$gens_since_admix"."_prop_par1_"."$mixture_proportion";
 
@@ -448,6 +451,11 @@ system("mkdir $reads_folder");
 
 #define files and counters
 my $current_outfile="split_file_list_1"; my $current_slurm="slurm_batch1.sh"; my $counter=0; my $track=0; my $string="";
+open OUT, ">$current_outfile";
+open SLURM, ">$current_slurm";
+for my $f (1..scalar(@commands_array)-1){
+    print SLURM "#"."$commands_array[$f]"."\n";
+}#print out all slurm header elements   
 
 if(length($recombination_map) eq 0){
     $recombination_map=0;
@@ -457,10 +465,13 @@ while($counter<$num_indivs){
     $counter=$counter+1; $track=$track+1;
     #print "$counter\t$track\n";
     
-    if(($track>=$num_indiv_per_job) or ($counter eq $num_indivs) or ($counter eq 1)){
+    if(($track ge $num_indiv_per_job) or ($counter eq $num_indivs) or ($counter eq 1)){
+
+	#print "$counter\t$track\n";
 
 	if($track eq $num_indiv_per_job){
 	
+	    #print "$track\t$num_indiv_per_job\t$counter\n";
 	    #print commands for current job
 	    if($macs eq 1){
 	    print SLURM "perl $program_path/generate_genomes_and_reads_v3.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $cross_contam $program_path\n";
@@ -468,7 +479,9 @@ while($counter<$num_indivs){
 	    } elsif($macs eq 0){
 	    print SLURM "perl $program_path/generate_genomes_and_reads_v3.pl $genome1 $genome2 $chr $chr1 $chr2 $chr_length $poly_par1 $poly_par2 $aims $error $reads_folder $mixture_proportion $gens_since_admix $rec_rate_Morgans $snp_freqs $current_outfile $number_reads $read_length $sequence_error $per_bp_indel $macs 1 1 $use_map $rec_rate_Morgans $recombination_map $cross_contam $program_path\n";
 	    }#submit current job
+
 	    my $jobid=qx($job_submit_cmd $current_slurm); chomp $jobid;
+	    print "$job_submit_cmd $current_slurm\n";
 	    my @jobarray=split(/ /,$jobid);
 	    #print "$jobarray[-1]\n";
 	    if(length($string) eq 0){
@@ -476,19 +489,29 @@ while($counter<$num_indivs){
 	    } else{
 	    $string="$string".","."$jobarray[-1]";
 	    }#final cleanup dependencies
+	    $track=0;
+
+	    #after submitting,open the next job file:
+
+	    $current_outfile="split_file_list_"."$counter";
+	    $current_slurm="slurm_batch"."$counter".".sh";
+	    open OUT, ">$current_outfile";
+	    open SLURM, ">$current_slurm";
+	    for my $b (1..scalar(@commands_array)-1){
+		print SLURM "#"."$commands_array[$b]"."\n";
+	    }#print out all slurm header elements 
+
 	}#submit job
-	$current_outfile="split_file_list_"."$counter";
-	$current_slurm="slurm_batch"."$counter".".sh"; 
-	open OUT, ">$current_outfile";
-	open SLURM, ">$current_slurm";
-	for my $b (1..scalar(@commands_array)-1){
-	print SLURM "#"."$commands_array[$b]"."\n";
-	}#print out all slurm header elements
-	$track=0;
+	
 	}#open individual files
 
     #print to individuals file for the shell
      print "submitting individual $counter\n";
+    my $current_haps="admix_simulation_demography_output_results_"."$counter";
+    my $awk_select="awk \-F\"\\t\" \'\$4 \=\= \""."$counter"."\""." \{print\}\' "."admix_simulation_demography_output_results.txt"." > "."$current_haps";
+
+    system($awk_select);
+
      print OUT "$counter\n";
 
 	my $r1="$reads_folder"."/"."indiv"."$counter"."_read1.fq"; my $r2="$reads_folder"."/"."indiv"."$counter"."_read2.fq";
@@ -502,10 +525,10 @@ for my $k (1..scalar(@commands_array)-1){
     print CLEANUP "#"."$commands_array[$k]"."\n";
 }#print out all slurm header elements
 
-print CLEANUP "rm admix_simulation_demography_output_results*"."\n";
+#!print CLEANUP "rm admix_simulation_demography_output_results*"."\n";
 print CLEANUP "rm slurm_batch*"."\n";
 print CLEANUP "rm split_file_list_*"."\n";
-print CLEANUP "rm macs_simulation_results_trees*"."\n";
+#!print CLEANUP "rm macs_simulation_results_trees*"."\n";
 print CLEANUP "rm par*_coordinates_fastahack"."\n";
 print CLEANUP "rm *fai"."\n";
 print CLEANUP "rm indiv*_log"."\n";
@@ -516,4 +539,12 @@ if($use_map eq 1){
 
 #print "cleaning up after: $string\n";
 
-system("sbatch --dependency=afterok:$string cleanup.sh");
+print "$string\n";
+if($job_submit_cmd eq 'sbatch'){
+system("$job_submit_cmd --dependency=afterok:$string cleanup.sh");
+} else{
+    #print "$job_submit_cmd cleanup.sh\n";
+    system("$job_submit_cmd cleanup.sh");
+}#submit directly or to cluster
+
+OA

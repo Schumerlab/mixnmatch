@@ -47,10 +47,6 @@ while(my $line=<IN>){
     system("perl $program_path/generate_shared_private_poly.pl $counter $aims $snp_freqs $poly_par1 $poly_par2 $chr_length $chr $chr1 $chr2");
     
     my $current_haps="admix_simulation_demography_output_results_"."$counter";
-    system("perl -pi -e 's/\#\t/\#/g' admix_simulation_demography_output_results.txt");
-    my $awk_select="awk \-F\"\\t\" \'\$4 \=\= \""."$counter"."\""." \{print\}\' "."admix_simulation_demography_output_results.txt"." > "."$current_haps";
-
-    system("$awk_select");
 
     #set the haplotypes to the just-generated parental haplotypes
     my $hap1="indiv"."$counter"."_"."hap1.fa";
@@ -64,10 +60,6 @@ while(my $line=<IN>){
     }#only generate polymorphic versions if not using macs
     elsif($use_macs eq 1){
 	my $current_haps="admix_simulation_demography_output_results_"."$counter";
-	system("perl -pi -e 's/\#\t/\#/g' admix_simulation_demography_output_results.txt");
-	my $awk_select="awk \-F\"\\t\" \'\$4 \=\= \""."$counter"."\""." \{print\}\' "."admix_simulation_demography_output_results.txt"." > "."$current_haps";
-
-	system("$awk_select");
 
     #generate and stitch together tracts                                                                                                             
     system("perl $program_path/selam_to_ancestry_tracts.pl $current_haps 1 $genome1 $genome2 $counter $total_par1 $total_par2 $use_map $rec_rate_Morgans $recombination_map $program_path");
