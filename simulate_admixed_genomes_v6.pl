@@ -525,10 +525,10 @@ for my $k (1..scalar(@commands_array)-1){
     print CLEANUP "#"."$commands_array[$k]"."\n";
 }#print out all slurm header elements
 
-#!print CLEANUP "rm admix_simulation_demography_output_results*"."\n";
+print CLEANUP "rm admix_simulation_demography_output_results*"."\n";
 print CLEANUP "rm slurm_batch*"."\n";
 print CLEANUP "rm split_file_list_*"."\n";
-#!print CLEANUP "rm macs_simulation_results_trees*"."\n";
+print CLEANUP "rm macs_simulation_results_trees*"."\n";
 print CLEANUP "rm par*_coordinates_fastahack"."\n";
 print CLEANUP "rm *fai"."\n";
 print CLEANUP "rm indiv*_log"."\n";
@@ -547,4 +547,4 @@ system("$job_submit_cmd --dependency=afterok:$string cleanup.sh");
     system("$job_submit_cmd cleanup.sh");
 }#submit directly or to cluster
 
-OA
+
