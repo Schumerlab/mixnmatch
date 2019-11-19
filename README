@@ -7,7 +7,8 @@ seqtk - https://github.com/lh3/seqtk
 wgsim - https://github.com/lh3/wgsim
 bedtools2 - https://github.com/arq5x/bedtools2.git
 SELAM - https://github.com/russcd/SELAM
-macs & msformatter 
+macs & msformatter - https://github.com/gchen98/macs
+seq-gen - https://github.com/rambaut/Seq-Gen
 
 other dependencies:
 perl Math::Random module - try cpan Math::Random to install
