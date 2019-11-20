@@ -13,10 +13,20 @@ while(my $line = <IN>){
     if($line =~ /genome1=/g){
         $genome1=$elements[1]; chomp $genome1;
         print "parent genome 1 is $genome1\n";
+	if($genome1 =~ /\.gz/g){
+	    print "unzipping $genome1\n";
+	    system("gunzip $genome1");
+	    $genome1 =~ s/\.gz//g;
+	}#unzip genome
     }#define genome1
     if($line =~ /genome2=/g){
         $genome2=$elements[1]; chomp $genome2;
         print "parent genome 2 is $genome2\n";
+	if($genome2 =~ /\.gz/g){
+            print "unzipping $genome2\n";
+            system("gunzip $genome2");
+            $genome2 =~ s/\.gz//g;
+        }#unzip genome 
     }#define genome2
     if($line =~ /use_ancestral=/g){
 	$use_ancestral=$elements[1]; chomp $use_ancestral;
@@ -451,8 +461,17 @@ system("mkdir $reads_folder");
 
 #define files and counters
 my $current_outfile="split_file_list_1"; my $current_slurm="slurm_batch1.sh"; my $counter=0; my $track=0; my $string="";
+
+if($job_submit_cmd eq 'sbatch'){
 open OUT, ">$current_outfile";
 open SLURM, ">$current_slurm";
+} elsif($counter eq 0){
+    open OUT, ">split_file_list_all";
+    open SLURM, ">batch_jobs.sh";
+    $current_slurm="batch_jobs.sh";
+    $current_outfile="split_file_list_all";
+}#running slurm jobs or not?
+
 for my $f (1..scalar(@commands_array)-1){
     print SLURM "#"."$commands_array[$f]"."\n";
 }#print out all slurm header elements   
@@ -492,14 +511,17 @@ while($counter<$num_indivs){
 	    $track=0;
 
 	    #after submitting,open the next job file:
-
+	    if($job_submit_cmd eq 'sbatch'){
 	    $current_outfile="split_file_list_"."$counter";
 	    $current_slurm="slurm_batch"."$counter".".sh";
 	    open OUT, ">$current_outfile";
 	    open SLURM, ">$current_slurm";
+	    
 	    for my $b (1..scalar(@commands_array)-1){
 		print SLURM "#"."$commands_array[$b]"."\n";
 	    }#print out all slurm header elements 
+
+	    }#write out next job file if using slurm
 
 	}#submit job
 	
@@ -526,7 +548,11 @@ for my $k (1..scalar(@commands_array)-1){
 }#print out all slurm header elements
 
 print CLEANUP "rm admix_simulation_demography_output_results*"."\n";
+
+if($job_submit_cmd eq 'sbatch'){
 print CLEANUP "rm slurm_batch*"."\n";
+}#remove slurm jobs if slurm was used
+
 print CLEANUP "rm split_file_list_*"."\n";
 print CLEANUP "rm macs_simulation_results_trees*"."\n";
 print CLEANUP "rm par*_coordinates_fastahack"."\n";
@@ -543,7 +569,6 @@ print "$string\n";
 if($job_submit_cmd eq 'sbatch'){
 system("$job_submit_cmd --dependency=afterok:$string cleanup.sh");
 } else{
-    #print "$job_submit_cmd cleanup.sh\n";
     system("$job_submit_cmd cleanup.sh");
 }#submit directly or to cluster
 
