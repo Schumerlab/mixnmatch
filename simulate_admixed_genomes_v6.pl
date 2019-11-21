@@ -248,8 +248,8 @@ if($macs eq 1){
 
     print "macs $macs_params -T | msformatter | grep \'\\[\' > macs_simulation_results_trees.txt\n";
 
-    my $partitions=qx(wc -l macs_simulation_results_trees.txt | perl -p -e 's/ +/\t/g' | cut -f 1); chomp $partitions;
-    
+    my $partitions=qx(wc -l macs_simulation_results_trees.txt | perl -p -e 's/ //g' | perl -p -e 's/macs_simulation_results_trees.txt/\tmacs_simulation_results_trees.txt/g' | cut -f 1); chomp $partitions;
+
     if($partitions eq 0){
 	die "macs run was unsuccessful, check your macs parameters command and try again\n";
     }# do not procede if the macs command did not work
@@ -418,7 +418,7 @@ my $chr2="$chr"."_select_par2.fa";
 system("perl $program_path/getScaffold_samtools.pl $genome1 $chr > $chr1");
 system("perl $program_path/getScaffold_samtools.pl $genome2 $chr > $chr2");
 
-my $chr_length=qx(cat $chr1 | tail -n +2 | perl -p -e 's/\n//g' | wc -c | perl -p -e 's/ +/\t/g' | cut -f 1); chomp $chr_length;
+my $chr_length=qx(cat $chr1 | tail -n +2 | perl -p -e 's/\n//g' | wc -c | perl -p -e 's/ +//g'); chomp $chr_length;
 
 print "number of basepairs in $chr is $chr_length\n";
 
@@ -528,18 +528,19 @@ while($counter<$num_indivs){
 	}#open individual files
 
     #print to individuals file for the shell
-     print "submitting individual $counter\n";
+    print "submitting individual $counter\n";
     my $current_haps="admix_simulation_demography_output_results_"."$counter";
     my $awk_select="awk \-F\"\\t\" \'\$4 \=\= \""."$counter"."\""." \{print\}\' "."admix_simulation_demography_output_results.txt"." > "."$current_haps";
 
     system($awk_select);
 
-     print OUT "$counter\n";
+    print OUT "$counter\n";
 
-	my $r1="$reads_folder"."/"."indiv"."$counter"."_read1.fq"; my $r2="$reads_folder"."/"."indiv"."$counter"."_read2.fq";
+    my $r1="$reads_folder"."/"."indiv"."$counter"."_read1.fq"; my $r2="$reads_folder"."/"."indiv"."$counter"."_read2.fq";
  
     print LIST "$r1".".gz"."\t$r2".".gz"."\n";
  
+
 }#for all jobs
 
 open CLEANUP, ">cleanup.sh";
@@ -556,7 +557,6 @@ print CLEANUP "rm slurm_batch*"."\n";
 print CLEANUP "rm split_file_list_*"."\n";
 print CLEANUP "rm macs_simulation_results_trees*"."\n";
 print CLEANUP "rm par*_coordinates_fastahack"."\n";
-print CLEANUP "rm *fai"."\n";
 print CLEANUP "rm indiv*_log"."\n";
 
 if($use_map eq 1){
@@ -571,5 +571,4 @@ system("$job_submit_cmd --dependency=afterok:$string cleanup.sh");
 } else{
     system("$job_submit_cmd cleanup.sh");
 }#submit directly or to cluster
-
 
