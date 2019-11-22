@@ -1,6 +1,15 @@
+##########################
+#####mixnmatch quickstart
+##########################
+
+See the user manual pdf for more complete information
+
 This is a pipeline for simulating admixed genomes to evaluate the accuracy of local ancestry callers under different scenarios
 
-The following programs/dependencies **must** be in your PATH [better install coming soon]:
+#####For step-by-step installation instructions see:
+installation_instructions.txt
+
+#short version: The following programs/dependencies **must** be in your PATH:
 
 fastahack - https://github.com/ekg/fastahack
 seqtk - https://github.com/lh3/seqtk
@@ -11,8 +20,8 @@ macs & msformatter - https://github.com/gchen98/macs
 seq-gen - https://github.com/rambaut/Seq-Gen
 
 other dependencies:
-perl Math::Random module - try cpan Math::Random to install
-perl use Math::Round module - try cpan Math::Round to install
+perl Math::Random module
+perl use Math::Round module
 biopython
 
 To test that programs are in your PATH type each program name and hit enter. If it returns usage they are installed properly. e.g.:
@@ -83,6 +92,9 @@ sequencing_error=
 #number of reads to simulate
 number_reads=
 
+#amount of cross-contamination to simulate
+cross_contam=
+
 #Simulate drift between the populations that admixed and the sampled parental species populations? 1 - yes, 0 - no
 #NOTE: macs_par1_aims_pop and macs_par2_aims_pop must be defined with this option, and an appropriate macs command provided
 parental_drift=
@@ -96,7 +108,7 @@ macs_par2_aims_pop=
 #Ancestry informative site frequency threshold to impose on parental species haplotypes (ratio 0-1, recommended >0.9)
 aim_freq_cutoff=
 
-#cluster job submission command (i.e. sbatch)
+#job submission command (i.e. sbatch or bash)
 job_submit_cmd=
 
 #Use macs to simulate sequences? 0 - no, use provided genomes, 1 - yes simulate with macs
@@ -107,6 +119,9 @@ use_map=
 
 #Provide a SELAM parameter file to specify hybrid population demography. If one is not specified the program will assume a simple demographic scenario, see documentation for more details
 SELAM_param_file=
+
+#Provide a SELAM selection file if you are simulating selection
+SELAM_selection_file=
 
 #If you are simulating sequences using macs (use_macs=1), you must provide a macs command string. The program will accept two populations only but arbitrary demographic history. A macs formatted recombination file must be provided with the -R parameter if use_map=1
 #example: macs_params=60 20000000 -I 2 30 30 0 -t 0.001 -h 1e2 -r 0.001 -ej 2 2 1 -R recombination_map_for_macs.txt
