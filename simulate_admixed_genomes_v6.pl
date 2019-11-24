@@ -480,15 +480,17 @@ if(length($recombination_map) eq 0){
     $recombination_map=0;
 }#if map is absent, set to zero as script placeholder
 
-while($counter<$num_indivs){
+while($counter < $num_indivs){
     $counter=$counter+1; $track=$track+1;
     #print "$counter\t$track\n";
-    
+    #print to individuals file for the shell
+    print "submitting individual $counter\n";
+
     if(($track ge $num_indiv_per_job) or ($counter eq $num_indivs) or ($counter eq 1)){
 
 	#print "$counter\t$track\n";
 
-	if($track eq $num_indiv_per_job){
+	if(($track eq ($num_indiv_per_job+1)) or ($counter eq $num_indivs)){
 	
 	    #print "$track\t$num_indiv_per_job\t$counter\n";
 	    #print commands for current job
@@ -501,6 +503,8 @@ while($counter<$num_indivs){
 
 	    my $jobid=qx($job_submit_cmd $current_slurm); chomp $jobid;
 	    print "$job_submit_cmd $current_slurm\n";
+
+	    if($job_submit_cmd eq 'sbatch'){
 	    my @jobarray=split(/ /,$jobid);
 	    #print "$jobarray[-1]\n";
 	    if(length($string) eq 0){
@@ -511,7 +515,6 @@ while($counter<$num_indivs){
 	    $track=0;
 
 	    #after submitting,open the next job file:
-	    if($job_submit_cmd eq 'sbatch'){
 	    $current_outfile="split_file_list_"."$counter";
 	    $current_slurm="slurm_batch"."$counter".".sh";
 	    open OUT, ">$current_outfile";
@@ -528,7 +531,6 @@ while($counter<$num_indivs){
 	}#open individual files
 
     #print to individuals file for the shell
-    print "submitting individual $counter\n";
     my $current_haps="admix_simulation_demography_output_results_"."$counter";
     my $awk_select="awk \-F\"\\t\" \'\$4 \=\= \""."$counter"."\""." \{print\}\' "."admix_simulation_demography_output_results.txt"." > "."$current_haps";
 
